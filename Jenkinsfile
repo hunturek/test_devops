@@ -46,8 +46,7 @@ pipeline {
                     git branch: env.BACKEND_BRANCH, url: env.BACKEND_REPO
                     
                     // Собираем Docker образ для бэкенда
-                    docker.build("${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${env.BACKEND_DOCKERFILE}
-                        --build-arg PIP_EXTRA_INDEX_URL=https://pypi.org/project/titanic-model/ .")
+                    docker.build("${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${env.BACKEND_DOCKERFILE} --build-arg PIP_EXTRA_INDEX_URL=https://pypi.org/project/titanic-model/ .")
                     
                     // Пушим образ в registry (если нужно)
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
