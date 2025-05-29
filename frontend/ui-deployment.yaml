@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: titanic-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: titanic-ui
+  template:
+    metadata:
+      labels:
+        app: titanic-ui
+    spec:
+      containers:
+      - name: ui-container
+        image: hunturek/titanic-predictor:latest
+        ports:
+        - containerPort: 80
