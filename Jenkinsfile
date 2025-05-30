@@ -79,20 +79,32 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'k8s-jenkins-token', variable: 'K8S_TOKEN')]) {
                         
-                        bat "kubectl config set-credentials jenkins-user --token=%K8S_TOKEN%"
-                        
-                        // Деплоим бэкенд
-                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
-                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
-                        
-                        // Деплоим фронтенд
-                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
-                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
-                        
-                        // Обновляем образы
                         bat """
-                            kubectl set image deployment/api-deployment ${env.BACKEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
-                            kubectl set image deployment/ui-deployment ${env.FRONTEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
+                            kubectl config set-cluster k8s-cluster --server=https://127.0.0.1:59580
+                            kubectl config set-credentials jenkins --token=%K8S_TOKEN%
+                            kubectl config set-context jenkins-context --cluster=k8s-cluster --user=jenkins
+                            kubectl config use-context jenkins-context
+                        """
+                        
+                        bat "kubectl --insecure-skip-tls-verify=true apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
+                        bat "kubectl --insecure-skip-tls-verify=true apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
+                        
+                        bat "kubectl --insecure-skip-tls-verify=true apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
+                        bat "kubectl --insecure-skip-tls-verify=true apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
+
+                        def apiContainer = bat(
+                            script: 'kubectl --insecure-skip-tls-verify=true get deployment titanic-api -o jsonpath="{.spec.template.spec.containers[0].name}"',
+                            returnStdout: true
+                        ).trim()
+                        
+                        def uiContainer = bat(
+                            script: 'kubectl --insecure-skip-tls-verify=true get deployment titanic-ui -o jsonpath="{.spec.template.spec.containers[0].name}"',
+                            returnStdout: true
+                        ).trim()
+                        
+                        bat """
+                            kubectl --insecure-skip-tls-verify=true set image deployment/titanic-api ${apiContainer}=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
+                            kubectl --insecure-skip-tls-verify=true set image deployment/titanic-ui ${uiContainer}=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
                         """
                     }
                 }
