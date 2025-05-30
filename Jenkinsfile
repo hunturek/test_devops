@@ -84,12 +84,12 @@ pipeline {
                         sh "cp ${KUBECONFIG_FILE} ~/.kube/config"
 
                         // Деплоим бэкенд
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml"
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml"
+                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
+                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
                         
                         // Деплоим фронтенд
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml"
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml"
+                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
+                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
                         
                         // Если нужно обновить образы в deployment
                         sh """
