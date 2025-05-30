@@ -80,8 +80,8 @@ pipeline {
                     // Используем kubectl для деплоя (конфиги должны быть в DevOps репозитории)
                     withCredentials([file(credentialsId: 'docker-desktop-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
 
-                        mkdir -p ~/.kube
-                        cp ${KUBECONFIG_FILE} ~/.kube/config
+                        sh "mkdir -p ~/.kube"
+                        sh "cp ${KUBECONFIG_FILE} ~/.kube/config"
 
                         // Деплоим бэкенд
                         sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml"
