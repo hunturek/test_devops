@@ -91,20 +91,10 @@ pipeline {
                         
                         bat "kubectl --insecure-skip-tls-verify=true apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
                         bat "kubectl --insecure-skip-tls-verify=true apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
-
-                        def apiContainer = bat(
-                            script: 'kubectl --insecure-skip-tls-verify=true get deployment titanic-api -o jsonpath="{.spec.template.spec.containers[0].name}"',
-                            returnStdout: true
-                        ).trim()
-                        
-                        def uiContainer = bat(
-                            script: 'kubectl --insecure-skip-tls-verify=true get deployment titanic-ui -o jsonpath="{.spec.template.spec.containers[0].name}"',
-                            returnStdout: true
-                        ).trim()
                         
                         bat """
-                            kubectl --insecure-skip-tls-verify=true set image deployment/titanic-api ${apiContainer}=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
-                            kubectl --insecure-skip-tls-verify=true set image deployment/titanic-ui ${uiContainer}=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
+                            kubectl --insecure-skip-tls-verify=true set image deployment/titanic-api api=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
+                            kubectl --insecure-skip-tls-verify=true set image deployment/titanic-ui ui-container=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
                         """
                     }
                 }
