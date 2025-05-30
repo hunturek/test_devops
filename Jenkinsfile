@@ -31,14 +31,6 @@ pipeline {
             }
         }
         
-        stage('Checkout DevOps Repo') {
-            steps {
-                dir('devops-repo') {  // Клонируем репозиторий в подкаталог devops-repo
-                    git branch: env.DEVOPS_BRANCH, url: env.DEVOPS_REPO
-                }
-            }
-        }
-        
         stage('Checkout and Build Backend') {
             steps {
                 script {
@@ -70,6 +62,14 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh "docker push ${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
                     }
+                }
+            }
+        }
+
+        stage('Checkout DevOps Repo') {
+            steps {
+                dir('devops-repo') {  // Клонируем репозиторий в подкаталог devops-repo
+                    git branch: env.DEVOPS_BRANCH, url: env.DEVOPS_REPO
                 }
             }
         }
