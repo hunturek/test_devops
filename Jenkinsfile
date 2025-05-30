@@ -42,8 +42,8 @@ pipeline {
                     
                     // Пушим образ в registry (если нужно)
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${env.DOCKER_REGISTRY}"
-                        sh "docker push ${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                        bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${env.DOCKER_REGISTRY}"
+                        bat "docker push ${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
                     }
                 }
             }
@@ -60,7 +60,7 @@ pipeline {
                     
                     // Пушим образ в registry (если нужно)
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "docker push ${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                        bat "docker push ${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
                     }
                 }
             }
@@ -78,31 +78,17 @@ pipeline {
             steps {
                 script {
                     withCredentials([file(credentialsId: 'docker-desktop-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                        sh '''
-                            # Настройка kubeconfig для Docker Desktop
-                            mkdir -p ~/.kube
-                            cp ${KUBECONFIG_FILE} ~/.kube/config
-                            
-                            # Обновляем адрес API сервера для работы из контейнера
-                            kubectl config set-cluster docker-desktop \
-                                --server=https://host.docker.internal:6443 \
-                                --insecure-skip-tls-verify=true \
-                            
-                            # Проверяем подключение
-                            kubectl cluster-info
-                            kubectl get nodes
-                        '''
                         
                         // Деплоим бэкенд
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
                         
                         // Деплоим фронтенд
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
-                        sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
                         
                         // Обновляем образы
-                        sh """
+                        bat """
                             kubectl set image deployment/api-deployment ${env.BACKEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
                             kubectl set image deployment/ui-deployment ${env.FRONTEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
                         """
