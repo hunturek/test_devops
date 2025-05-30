@@ -87,7 +87,6 @@ pipeline {
                             kubectl config set-cluster docker-desktop \
                                 --server=https://host.docker.internal:6443 \
                                 --insecure-skip-tls-verify=true \
-                                --embed-certs=true
                             
                             # Проверяем подключение
                             kubectl cluster-info
