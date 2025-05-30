@@ -8,13 +8,13 @@ pipeline {
         BACKEND_REPO = 'https://github.com/Emilien-mipt/titanic-webapp.git'
         BACKEND_BRANCH = 'main'
         BACKEND_DOCKERFILE = 'Dockerfile' // или просто Dockerfile, если он так называется
-        BACKEND_IMAGE_NAME = 'backend-app'
+        BACKEND_IMAGE_NAME = 'hunturek/titanic-model'
         
         // Фронтенд переменные
         FRONTEND_REPO = 'https://github.com/hunturek/test_frontend.git'
         FRONTEND_BRANCH = 'develop'
         FRONTEND_DOCKERFILE = 'Dockerfile' // или просто Dockerfile, если он так называется
-        FRONTEND_IMAGE_NAME = 'frontend-app'
+        FRONTEND_IMAGE_NAME = 'hunturek/titanic-predictor'
         
         // DevOps переменные
         DEVOPS_REPO = 'https://github.com/hunturek/test_devops.git'
