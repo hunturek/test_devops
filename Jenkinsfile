@@ -77,12 +77,23 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Используем kubectl для деплоя (конфиги должны быть в DevOps репозитории)
                     withCredentials([file(credentialsId: 'docker-desktop-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-
-                        sh "mkdir -p ~/.kube"
-                        sh "cp ${KUBECONFIG_FILE} ~/.kube/config"
-
+                        sh '''
+                            # Настройка kubeconfig для Docker Desktop
+                            mkdir -p ~/.kube
+                            cp ${KUBECONFIG_FILE} ~/.kube/config
+                            
+                            # Обновляем адрес API сервера для работы из контейнера
+                            kubectl config set-cluster docker-desktop \
+                                --server=https://host.docker.internal:6443 \
+                                --insecure-skip-tls-verify=true \
+                                --embed-certs=true
+                            
+                            # Проверяем подключение
+                            kubectl cluster-info
+                            kubectl get nodes
+                        '''
+                        
                         // Деплоим бэкенд
                         sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
                         sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
@@ -91,7 +102,7 @@ pipeline {
                         sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
                         sh "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
                         
-                        // Если нужно обновить образы в deployment
+                        // Обновляем образы
                         sh """
                             kubectl set image deployment/api-deployment ${env.BACKEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
                             kubectl set image deployment/ui-deployment ${env.FRONTEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
