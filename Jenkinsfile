@@ -76,20 +76,25 @@ pipeline {
         
         stage('Deploy to Kubernetes') {
             steps {
-                script {                        
-                    // Деплоим бэкенд
-                    bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
-                    bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
-                    
-                    // Деплоим фронтенд
-                    bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
-                    bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
-                    
-                    // Обновляем образы
-                    bat """
-                        kubectl set image deployment/api-deployment ${env.BACKEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
-                        kubectl set image deployment/ui-deployment ${env.FRONTEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
-                    """
+                script {
+                    withCredentials([file(credentialsId: 'k8s-jenkins-token', variable: 'K8S_TOKEN')]) {
+                        
+                        bat "kubectl config set-credentials jenkins-user --token=%K8S_TOKEN%"
+                        
+                        // Деплоим бэкенд
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-deployment.yaml --validate=false"
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/backend/api-service.yaml --validate=false"
+                        
+                        // Деплоим фронтенд
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-deployment.yaml --validate=false"
+                        bat "kubectl apply -f ${env.WORKSPACE}/devops-repo/frontend/ui-service.yaml --validate=false"
+                        
+                        // Обновляем образы
+                        bat """
+                            kubectl set image deployment/api-deployment ${env.BACKEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}
+                            kubectl set image deployment/ui-deployment ${env.FRONTEND_IMAGE_NAME}=${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}
+                        """
+                    }
                 }
             }
         }
