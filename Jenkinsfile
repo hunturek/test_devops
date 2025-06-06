@@ -1,5 +1,12 @@
 pipeline {
     agent any
+    parameters {
+        booleanParam(
+            name: 'RUN_TESTS',
+            defaultValue: false,
+            description: 'run tests?'
+        )
+    }
     environment {
         // Общие переменные
         DOCKER_REGISTRY = 'docker.io' // Укажите ваш Docker registry
@@ -30,17 +37,29 @@ pipeline {
                 }
             }
         }
+
+        stage('Checkout Backend') {
+            steps {
+                git branch: env.BACKEND_BRANCH, url: env.BACKEND_REPO
+            }
+        }
         
-        stage('Checkout and Build Backend') {
+        stage('Run Backend Tests') {
             steps {
                 script {
-                    // Клонируем бэкенд репозиторий
+                    bat """
+                        docker run --rm -v "%CD%":/app -w /app python:3.10 ^
+                        sh -c "pip install tox && tox -e test_app"
+                    """
+                }
+            }
+        }
+        
+        stage('Build Backend') {
+            steps {
+                script {
                     git branch: env.BACKEND_BRANCH, url: env.BACKEND_REPO
-                    
-                    // Собираем Docker образ для бэкенда
                     docker.build("${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${env.BACKEND_DOCKERFILE} --build-arg PIP_EXTRA_INDEX_URL=https://pypi.org/project/titanic-model/ .")
-                    
-                    // Пушим образ в registry (если нужно)
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${env.DOCKER_REGISTRY}"
                         bat "docker push ${env.DOCKER_REGISTRY}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
@@ -52,13 +71,8 @@ pipeline {
         stage('Checkout and Build Frontend') {
             steps {
                 script {
-                    // Клонируем фронтенд репозиторий
                     git branch: env.FRONTEND_BRANCH, url: env.FRONTEND_REPO
-                    
-                    // Собираем Docker образ для фронтенда
                     docker.build("${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}", "-f ${env.FRONTEND_DOCKERFILE} .")
-                    
-                    // Пушим образ в registry (если нужно)
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat "docker push ${env.DOCKER_REGISTRY}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
                     }
@@ -68,7 +82,7 @@ pipeline {
 
         stage('Checkout DevOps Repo') {
             steps {
-                dir('devops-repo') {  // Клонируем репозиторий в подкаталог devops-repo
+                dir('devops-repo') { 
                     git branch: env.DEVOPS_BRANCH, url: env.DEVOPS_REPO
                 }
             }
