@@ -45,6 +45,9 @@ pipeline {
         }
         
         stage('Run Backend Tests') {
+            when {
+                expression { params.RUN_TESTS.toBoolean() }
+            }
             steps {
                 script {
                     bat """
